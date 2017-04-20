@@ -1,10 +1,10 @@
 package io.github.droidkaigi.confsched2017.viewmodel;
 
-import com.annimon.stream.Collectors;
 import com.annimon.stream.Stream;
 
 import android.content.Context;
 import android.databinding.BaseObservable;
+import android.support.annotation.NonNull;
 import android.view.View;
 
 import java.util.List;
@@ -13,61 +13,67 @@ import java.util.Locale;
 import javax.inject.Inject;
 
 import io.github.droidkaigi.confsched2017.model.Session;
+import io.github.droidkaigi.confsched2017.repository.sessions.MySessionsRepository;
 import io.github.droidkaigi.confsched2017.repository.sessions.SessionsRepository;
+import io.github.droidkaigi.confsched2017.view.helper.Navigator;
 import io.reactivex.Single;
 
 public final class SearchViewModel extends BaseObservable implements ViewModel {
 
+    private final Navigator navigator;
+
     private SessionsRepository sessionsRepository;
+
+    private MySessionsRepository mySessionsRepository;
 
     private Callback callback;
 
     @Inject
-    SearchViewModel(SessionsRepository sessionsRepository) {
+    SearchViewModel(Navigator navigator, SessionsRepository sessionsRepository, MySessionsRepository mySessionsRepository) {
+        this.navigator = navigator;
         this.sessionsRepository = sessionsRepository;
+        this.mySessionsRepository = mySessionsRepository;
     }
 
     @Override
     public void destroy() {
-        //
+        this.callback = null;
     }
 
     public void onClickCover(@SuppressWarnings("unused") View view) {
         if (callback != null) {
-            callback.close();
+            callback.closeSearchResultList();
         }
     }
 
-    public Single<List<SearchResultViewModel>> getSearchResultViewModels(Context context,
-            SearchResultViewModel.Callback callback) {
-        String languageId = Locale.getDefault().getLanguage().toLowerCase();
-        return sessionsRepository.findAll(languageId)
+    public Single<List<SearchResultViewModel>> getSearchResultViewModels(Context context) {
+        return sessionsRepository.findAll(Locale.getDefault())
                 .map(sessions -> {
                     List<Session> filteredSessions = Stream.of(sessions)
                             .filter(session -> session.isSession() && session.speaker != null)
-                            .collect(Collectors.toList());
+                            .toList();
 
                     List<SearchResultViewModel> titleResults = Stream.of(filteredSessions)
                             .map(session -> {
-                                SearchResultViewModel viewModel = SearchResultViewModel.createTitleType(session, context);
-                                viewModel.setCallback(callback);
+                                SearchResultViewModel viewModel = SearchResultViewModel
+                                        .createTitleType(session, context, navigator, mySessionsRepository);
                                 return viewModel;
-                            }).collect(Collectors.toList());
+                            }).toList();
 
                     List<SearchResultViewModel> descriptionResults = Stream.of(filteredSessions)
                             .map(session -> {
                                 SearchResultViewModel viewModel =
-                                        SearchResultViewModel.createDescriptionType(session, context);
-                                viewModel.setCallback(callback);
+                                        SearchResultViewModel.createDescriptionType(
+                                                session, context, navigator, mySessionsRepository);
                                 return viewModel;
-                            }).collect(Collectors.toList());
+                            }).toList();
 
                     List<SearchResultViewModel> speakerResults = Stream.of(filteredSessions)
                             .map(session -> {
-                                SearchResultViewModel viewModel = SearchResultViewModel.createSpeakerType(session, context);
-                                viewModel.setCallback(callback);
+                                SearchResultViewModel viewModel = SearchResultViewModel
+                                        .createSpeakerType(session, context, navigator, mySessionsRepository);
                                 return viewModel;
-                            }).collect(Collectors.toList());
+                            }).toList();
 
                     titleResults.addAll(descriptionResults);
                     titleResults.addAll(speakerResults);
@@ -76,13 +82,13 @@ public final class SearchViewModel extends BaseObservable implements ViewModel {
                 });
     }
 
-    public void setCallback(Callback callback) {
+    public void setCallback(@NonNull Callback callback) {
         this.callback = callback;
     }
 
     public interface Callback {
 
-        void close();
+        void closeSearchResultList();
     }
 
 }

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_splash"
+            >
+
+        <io.github.droidkaigi.confsched2017.view.customview.ParticlesAnimationView
+                android:id="@+id/particle_animation_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_centerInParent="true"
+                />
+
+        <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:src="@drawable/img_splash_logo"
+                />
+
+    </RelativeLayout>
+
+</layout>
